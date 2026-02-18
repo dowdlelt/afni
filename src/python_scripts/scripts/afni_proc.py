@@ -7,7 +7,7 @@
 # for end='' parameter to print()
 from __future__ import print_function
 
-import string, sys, os
+import string, sys, os, re
 from time import asctime
 
 # AFNI modules
@@ -2599,6 +2599,10 @@ class SubjProcSream:
         # no errors, just warn the user (for J Britton)   25 May 2011
         uniq_list_as_dsets(self.dsets, 1)
         self.check_block_order()
+        errs = 0
+        errs += self.check_tshift_tpattern_file()
+        errs += self.check_gltsym_labels()
+        if errs: return 1
 
     def set_post_funcs(self):
         """process any options that should set post_funcs for some blocks
@@ -3236,6 +3240,55 @@ class SubjProcSream:
             return 1
         elif bind0 < bind1: return 1
         else:               return 0
+
+    def check_tshift_tpattern_file(self):
+        """check if slice timing file specified with -tshift_opts_ts -tpattern @file exists
+           return the number of errors
+        """
+        errs = 0
+        opt = self.user_opts.find_opt('-tshift_opts_ts')
+        if not opt or not opt.parlist:
+            return errs
+        if '-tpattern' in opt.parlist:
+            tind = opt.parlist.index('-tpattern')
+            if tind < len(opt.parlist) - 1:
+                tpat = opt.parlist[tind + 1]
+                if tpat.startswith('@'):
+                    fname = tpat[1:]
+                    if not os.path.isfile(fname):
+                        errs += 1
+                        print("** error: slice timing file '%s' does not exist" % fname)
+        return errs
+
+    def check_gltsym_labels(self):
+        """check that GLT SYM condition names exist in -regress_stim_labels
+           return the number of errors
+        """
+        errs = 0
+        opt_3dD = self.user_opts.find_opt('-regress_opts_3dD')
+        if not opt_3dD or not opt_3dD.parlist:
+            return errs
+        opt_labels = self.user_opts.find_opt('-regress_stim_labels')
+        stim_labels = set()
+        if opt_labels and opt_labels.parlist:
+            stim_labels = set(opt_labels.parlist)
+        opt_extra_labels = self.user_opts.find_opt('-regress_extra_stim_labels')
+        if opt_extra_labels and opt_extra_labels.parlist:
+            stim_labels.update(opt_extra_labels.parlist)
+        gltsym_entries = []
+        for i, parm in enumerate(opt_3dD.parlist):
+            if parm == '-gltsym' and i + 1 < len(opt_3dD.parlist):
+                gltsym_entries.append(opt_3dD.parlist[i + 1])
+        for gltsym in gltsym_entries:
+            sym_match = re.match(r"SYM:\s*(.+)", gltsym, re.IGNORECASE)
+            if sym_match:
+                sym_content = sym_match.group(1)
+                tokens = re.findall(r"[+-]?\d*\.?\d*\*?([a-zA-Z_][a-zA-Z0-9_]*)", sym_content)
+                for token in tokens:
+                    if token and token not in stim_labels:
+                        errs += 1
+                        print("** error: GLT SYM condition '%s' not found in -regress_stim_labels" % token)
+        return errs
 
     # set subj shell variable, check output dir, create and cd
     def init_script(self):
