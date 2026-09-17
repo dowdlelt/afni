@@ -79,12 +79,12 @@ static void COMPRESS_setup_programs(void)  /* 03 May 2013 */
 
    /* zstd: prefer pzstd, which writes independent frames that also
       decompress in parallel; level from AFNI_ZSTD_LEVEL      [zstd] */
-   { int zlev = (int)AFNI_numenv_def("AFNI_ZSTD_LEVEL", 1.0) ;
+   { int zlev = (int)AFNI_numenv_def("AFNI_ZSTD_LEVEL", 3.0) ;
      int zthr = (int)AFNI_numenv_def("AFNI_ZSTD_THREADS", 0.0) ;
      int is_pzstd = 0 ;
      char thrstr[32] = "" ;
 
-     if( zlev < 1 || zlev > 19 ) zlev = 1 ;
+     if( zlev < 1 || zlev > 19 ) zlev = 3 ;
      if( zthr < 0 ) zthr = 0 ;
 
      if( !AFNI_yesenv("AFNI_DONT_USE_PZSTD") )
