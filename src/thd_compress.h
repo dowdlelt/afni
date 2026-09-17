@@ -30,36 +30,39 @@ extern "C" {                    /* care of Greg Balls    7 Aug 2006 [rickr] */
 #define COMPRESS_BZIP2      1
 #define COMPRESS_COMPRESS   2
 #define COMPRESS_PIGZ       3
+#define COMPRESS_ZSTD       4
 
 /* PJR 07/22/98- adding brikcomp decompression to afni.
    Compression with brikcomp is not supported because it needs the header information. */
 
-#define COMPRESS_BRIKCOMP   4
-#define COMPRESS_LASTCODE   4
-#define NUM_COMPRESS_elist  4
+#define COMPRESS_BRIKCOMP   5
+#define COMPRESS_LASTCODE   5
+#define NUM_COMPRESS_elist  5
 
-static char * COMPRESS_suffix[]     = { ".gz" , ".bz2" , ".Z", ".gz", ".briz" } ;
-static int    COMPRESS_suffix_len[] = { 3     , 4      , 2     , 3,   5} ;
+static char * COMPRESS_suffix[]     = { ".gz" , ".bz2" , ".Z", ".gz", ".zst", ".briz" } ;
+static int    COMPRESS_suffix_len[] = { 3     , 4      , 2     , 3,    4,      5} ;
 
 #if 0  /*----------- moved to thd_compress.c [10 May 2013] -----------------------*/
 static char * COMPRESS_program[]    = { "gzip -1c > '%s'"  ,
                                         "bzip2 -1c > '%s'" ,
                                         "compress > '%s'"  ,
                                         "pigz -1c > '%s'"  ,
+                                        "zstd -1q -c > '%s'",
                                         "cat > '%s'"} ;         /* shouldn't be called */
 
-static int    COMPRESS_program_ok[] = { 1 , 1 , 1 , 1 , 0 } ;     /* RWCox 03 Aug 1998 */
+static int    COMPRESS_program_ok[] = { 1 , 1 , 1 , 1 , 1 , 0 } ;     /* RWCox 03 Aug 1998 */
 
 static char * COMPRESS_unprogram[]  = { "gzip -dc '%s'"  ,
                                         "bzip2 -dc '%s'" ,
                                         "uncompress -c '%s'",
                                         "pigz -dc '%s'"  ,
+                                        "zstd -dq -c '%s'",
                                         "brikcomp -c '%s'" } ;
 #endif /*-------------------------------------------------------------------------*/
 
-static char * COMPRESS_enviro[] = { "GZIP" , "BZIP2" , "COMPRESS" , "PIGZ" , "BRIKCOMP" } ;
+static char * COMPRESS_enviro[] = { "GZIP" , "BZIP2" , "COMPRESS" , "PIGZ" , "ZSTD" , "BRIKCOMP" } ;
 
-static char * COMPRESS_elist[] = { "GZIP" , "BZIP2" , "COMPRESS",  "PIGZ" } ;
+static char * COMPRESS_elist[] = { "GZIP" , "BZIP2" , "COMPRESS",  "PIGZ", "ZSTD" } ;
 
 /*---------- prototypes ----------*/
 

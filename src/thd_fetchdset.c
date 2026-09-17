@@ -24,6 +24,7 @@ ENTRY("THD_fetch_dset") ;
    if( cp == NULL                          &&
        !STRING_HAS_SUFFIX(hp,".nii")       &&  /* 28 Aug 2003 */
        !STRING_HAS_SUFFIX(hp,".nii.gz")    &&  /* 06 Apr 2005 */
+         !STRING_HAS_SUFFIX(hp,".nii.zst")   &&
        !STRING_HAS_SUFFIX(hp,".niml")      &&  /* 16 Jun 2006 [rickr] */
        !STRING_HAS_SUFFIX(hp,".niml.dset") &&
        !STRING_HAS_SUFFIX(hp,".gii")       &&  /* 13 Feb 2008 [rickr] */
@@ -63,7 +64,7 @@ ENTRY("THD_fetch_dset") ;
       RETURN(dset) ;
    DSET_mallocize(dset) ;
 
-   /*** try to read the .BRIK or .BRIK.gz file into memory ***/
+   /*** try to read the .BRIK, .BRIK.gz or .BRIK.zst file into memory ***/
 
    strcpy( hp+(strlen(hp)-5) , ".BRIK.gz" ) ;
    fprintf(stderr," ++ Trying to fetch %s",hp) ; iochan_sleep(100) ;
@@ -73,8 +74,13 @@ ENTRY("THD_fetch_dset") ;
       fprintf(stderr," ** FAILED!\n ++ Trying to fetch %s",hp) ; iochan_sleep(100) ;
       nbp = NI_read_URL( hp , &bp ) ;
       if( nbp <= 0 ){
-         fprintf(stderr," ** FAILED\n");
-         free(hp); DSET_delete(dset); RETURN(NULL);
+         strcat(hp,".zst") ;
+         fprintf(stderr," ** FAILED!\n ++ Trying to fetch %s",hp) ; iochan_sleep(100) ;
+         nbp = NI_read_URL( hp , &bp ) ;
+         if( nbp <= 0 ){
+            fprintf(stderr," ** FAILED\n");
+            free(hp); DSET_delete(dset); RETURN(NULL);
+         }
       }
    }
    if( nbp < dset->dblk->total_bytes ){

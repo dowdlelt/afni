@@ -27,6 +27,10 @@
              STRING_HAS_SUFFIX((fname),"+acpc.BRIK.gz") || \
              STRING_HAS_SUFFIX((fname),"+tlrc.BRIK.gz") ) {/* ZSS Feb 2012 */   \
      (fname)[ll-13] = '\0' ; \
+    } else if (STRING_HAS_SUFFIX((fname),"+orig.BRIK.zst") ||   \
+                   STRING_HAS_SUFFIX((fname),"+acpc.BRIK.zst") || \
+                   STRING_HAS_SUFFIX((fname),"+tlrc.BRIK.zst") ) { \
+       (fname)[ll-14] = '\0' ; \
    }  \
 }
 
@@ -571,9 +575,11 @@ fprintf(stderr,"EDIT_dset_items: iarg=%d flag_arg=%d\n",iarg,flag_arg) ;
       /** output of NIfTI-1.1 dataset: 06 May 2005 **/
       /* if the prefix ends in .nii or .nii.gz, change filename in brick_name */
       if( nprefix != NULL && ( STRING_HAS_SUFFIX(nprefix,".nii") ||
-                               STRING_HAS_SUFFIX(nprefix,".nii.gz") ) ){
+                                              STRING_HAS_SUFFIX(nprefix,".nii.gz") ||
+                                              STRING_HAS_SUFFIX(nprefix,".nii.zst") ) ){
         char *fname = dset->dblk->diskptr->brick_name ;
         int   gzpre = STRING_HAS_SUFFIX(nprefix,".nii.gz") ;
+            int   zstpre = STRING_HAS_SUFFIX(nprefix,".nii.zst") ;
         int   ll = strlen(fname) ; /* for DEVIEW macro */
         STRING_DEVIEW_DEEXT_BRICK(fname) ;
 
@@ -583,6 +589,8 @@ fprintf(stderr,"EDIT_dset_items: iarg=%d flag_arg=%d\n",iarg,flag_arg) ;
 
         if ( gzpre && ! STRING_HAS_SUFFIX(fname,".nii.gz") )
             strcat(fname,".nii.gz") ;
+      else if ( zstpre && ! STRING_HAS_SUFFIX(fname,".nii.zst") )
+         strcat(fname,".nii.zst") ;
         else if ( ! gzpre && ! STRING_HAS_SUFFIX(fname,".nii") )
             strcat(fname,".nii");
 

@@ -12,14 +12,16 @@ static char *COMPRESS_program[]    = { "gzip -1c > '%s'"  ,
                                        "bzip2 -1c > '%s'" ,
                                        "compress > '%s'"  ,
                                        "pigz -1c > '%s'"  ,
+                                       "zstd -1q -c > '%s'",
                                        "cat > '%s'"} ;         /* shouldn't be called */
 
-static int   COMPRESS_program_ok[] = { 1 , 1 , 1 , 1 , 0 } ;     /* RWCox 03 Aug 1998 */
+static int   COMPRESS_program_ok[] = { 1 , 1 , 1 , 1 , 1 , 0 } ;     /* RWCox 03 Aug 1998 */
 
 static char *COMPRESS_unprogram[]  = { "gzip -dc '%s'"  ,
                                        "bzip2 -dc '%s'" ,
                                        "uncompress -c '%s'",
                                        "pigz -dc '%s'"  ,
+                                       "zstd -dq -c '%s'",
                                        "brikcomp -c '%s'" } ;
 
 /*----------------------------------------------------------------------------*/
@@ -30,9 +32,13 @@ static char *COMPRESS_unprogram[]  = { "gzip -dc '%s'"  ,
 static void COMPRESS_setup_programs(void)  /* 03 May 2013 */
 {
    char *pgname=NULL ;
+   char *zthr_env=NULL ;
    static char *cprog_gzip=NULL , *cprog_bzip2=NULL ;
+   static char *cprog_zstd=NULL ;
    static char *uprog_gzip=NULL , *uprog_bzip2=NULL ;
+   static char *uprog_zstd=NULL ;
    static int first=1 ;
+   int zstd_threads = 0 ;
    int        cind=-1;
    int    skip_pigz=AFNI_yesenv("AFNI_DONT_USE_PIGZ") ;
 
@@ -73,6 +79,24 @@ static void COMPRESS_setup_programs(void)  /* 03 May 2013 */
      sprintf(uprog_bzip2,"%s -dc '%%s'",pgname) ;
      COMPRESS_unprogram[1] = uprog_bzip2 ;
    }
+
+                                  pgname = THD_find_executable("zstd") ;
+    if( pgname == NULL ){
+       COMPRESS_program_ok[4] = 0 ;
+    } else {
+       zthr_env = getenv("AFNI_ZSTD_THREADS") ;
+       if( zthr_env != NULL && *zthr_env != '\0' ){
+          zstd_threads = (int)strtol(zthr_env,NULL,10) ;
+          if( zstd_threads < 0 ) zstd_threads = 0 ;
+       }
+
+       cprog_zstd = (char *)malloc(sizeof(char)*(strlen(pgname)+64)) ;
+       sprintf(cprog_zstd,"%s -1q -T%d -c > '%%s'",pgname,zstd_threads) ;
+       COMPRESS_program[4] = cprog_zstd ;
+       uprog_zstd = (char *)malloc(sizeof(char)*(strlen(pgname)+32)) ;
+       sprintf(uprog_zstd,"%s -dq -c '%%s'",pgname) ;
+       COMPRESS_unprogram[4] = uprog_zstd ;
+    }
 
    return ;
 }

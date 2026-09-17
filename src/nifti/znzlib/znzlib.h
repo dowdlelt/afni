@@ -78,6 +78,24 @@ extern "C" {
 
 struct znzptr {
   int withz;
+  int zmode;
+  int zwrite;
+  int zstream;
+  int zeof;
+  int zsize_known;
+  znz_off_t zpos;
+  znz_off_t zfilled;
+  znz_off_t zusize;
+  char *zpath;
+  char *ztmpname;
+  FILE* zsrcfptr;
+  void* zstd_dstream;
+  unsigned char *zstinbuf;
+  unsigned char *zstoutbuf;
+  size_t zstin_cap;
+  size_t zstin_size;
+  size_t zstin_pos;
+  size_t zstout_cap;
   FILE* nzfptr;
 #ifdef HAVE_ZLIB
   gzFile zfptr;
@@ -94,9 +112,14 @@ typedef struct znzptr * znzFile;
 #define znzclose(f)   Xznzclose(&(f))
 
 /* Note extra argument (use_compression) where
-   use_compression==0 is no compression
-   use_compression!=0 uses zlib (gzip) compression
+  use_compression==0 is no compression
+  use_compression==1 uses zlib (gzip) compression
+  use_compression==2 uses native zstd compression (libzstd)
 */
+
+#define ZNZ_COMPRESS_NONE 0
+#define ZNZ_COMPRESS_GZIP 1
+#define ZNZ_COMPRESS_ZSTD 2
 
 znzFile znzopen(const char *path, const char *mode, int use_compression);
 

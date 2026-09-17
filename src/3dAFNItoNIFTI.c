@@ -174,6 +174,9 @@ int main( int argc , char *argv[] )
      if( cmode==COMPRESS_GZIP                  &&
          STRING_HAS_SUFFIX(options.infile_name,".nii")   )
        strcat(options.infile_name,".gz") ;
+  else if( cmode==COMPRESS_ZSTD             &&
+        STRING_HAS_SUFFIX(options.infile_name,".nii") )
+    strcat(options.infile_name,".zst") ;
 #else
      if( STRING_HAS_SUFFIX(options.infile_name,".nii.gz") ){
        WARNING_message("Can't write compressed file '%s'; writing '.nii' instead") ;

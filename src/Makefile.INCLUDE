@@ -6,11 +6,23 @@
 # be sure MAKE is defined      c/o J Bacon 22 May 2019
 MAKE ?= make
 
+# Top-level makefile used for this invocation (e.g., Makefile.linux_ubuntu_24_64)
+AFNI_MAIN_MAKEFILE ?= $(firstword $(MAKEFILE_LIST))
+
 # set default CPU_TYPE if not set already   8 Mar 2021
 CPU_TYPE ?= x86_64
 
 # LLIBS_X11 can be complete; can remove X from LLIBS    31 Jan 2020 [rickr]
 LLIBS_X11 ?= $(LLIBS)
+
+# native zstd support (can be overridden per platform Makefile)
+USE_ZSTD ?=
+LZSTD ?=
+
+ifneq ($(strip $(LZSTD)),)
+LLIBS += $(LZSTD)
+LLIBS_X11 += $(LZSTD)
+endif
 
 # netpbm is stored in varying locations under homebrew, allow for that
 NETPBMDIR ?= /usr/include/netpbm
@@ -31,10 +43,10 @@ F2C = f2c -A
 
 INFLAGS  = $(IFLAGS) -Icoxplot -Inifti/nifti2 -Inifti/niftilib              \
            -Inifti/nifticdf -Inifti/znzlib -I3DEdge/src -Irickr -Ileej3     \
-           $(USE_ZLIB) $(USE_GIFTI) $(USE_MRI_MINI) -If2c
+		   $(USE_ZLIB) $(USE_ZSTD) $(USE_GIFTI) $(USE_MRI_MINI) -If2c
 ISFLAGS  = $(IFLAGS) -Inifti/nifti2 -I../nifti/niftilib -I../nifti/nifticdf \
            -I../nifti/znzlib -I../nifti/nifti2 -I../3DEdge/src -I../rickr   \
-           $(USE_ZLIB) -I../f2c
+		   $(USE_ZLIB) $(USE_ZSTD) -I../f2c
 
 DOCS     = ../doc/ps/*.ps ../doc/README/README*                    \
            rickr/AFNI.changes.rickr rhammett/AFNI.changes.rhammett \
@@ -438,6 +450,11 @@ programs:$(PROGRAMS)
 programs_noplug:$(PROGRAMS_NOPLUG)
 
 programs_exe:$(PROGRAMS_EXE)
+
+# Ensure binaries never start linking before shared/static libraries are ready.
+$(PROGRAMS): $(LIBMRI_OBJ) libmrix.a libcoxplot.a libtracktools.a $(EXLIBS)
+$(PROGRAMS_NOPLUG): $(LIBMRI_OBJ) libmrix.a libcoxplot.a $(EXLIBS)
+$(PROGRAMS_EXE): $(LIBMRI_OBJ) libmrix.a libcoxplot.a $(EXLIBS)
 
 # keep s list of compiled libraries
 LIBRARY_LIST = $(LIBMRI_OBJ) libmrix.a libcoxplot.a $(LIBF2C_OBJ) $(EXLIBS)
@@ -1815,53 +1832,43 @@ mcw_malloc.o:mcw_malloc.c
 
 afni_slice_short.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=short afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_short.o
+	$(CC) -c -DDTYPE=short afni_slice.c $(INFLAGS) -o $@
 
 afni_slice_float.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=float afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_float.o
+	$(CC) -c -DDTYPE=float afni_slice.c $(INFLAGS) -o $@
 
 afni_slice_byte.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=byte afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_byte.o
+	$(CC) -c -DDTYPE=byte afni_slice.c $(INFLAGS) -o $@
 
 afni_slice_int.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=int afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_int.o
+	$(CC) -c -DDTYPE=int afni_slice.c $(INFLAGS) -o $@
 
 afni_slice_complex.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=complex afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_complex.o
+	$(CC) -c -DDTYPE=complex afni_slice.c $(INFLAGS) -o $@
 
 afni_slice_rgbyte.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=rgbyte afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_rgbyte.o
+	$(CC) -c -DDTYPE=rgbyte afni_slice.c $(INFLAGS) -o $@
 
 afni_slice_rgba.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=rgba afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_rgba.o
+	$(CC) -c -DDTYPE=rgba afni_slice.c $(INFLAGS) -o $@
 
 afni_pcor_byte.o:afni_pcor.h afni_pcor_update.c
 	$(RM) $@
-	$(CC) -c -DDTYPE=byte afni_pcor_update.c $(INFLAGS)
-	$(MV) afni_pcor_update.o afni_pcor_byte.o
+	$(CC) -c -DDTYPE=byte afni_pcor_update.c $(INFLAGS) -o $@
 
 afni_pcor_float.o:afni_pcor.h afni_pcor_update.c
 	$(RM) $@
-	$(CC) -c -DDTYPE=float afni_pcor_update.c $(INFLAGS)
-	$(MV) afni_pcor_update.o afni_pcor_float.o
+	$(CC) -c -DDTYPE=float afni_pcor_update.c $(INFLAGS) -o $@
 
 afni_pcor_short.o:afni_pcor.h afni_pcor_update.c
 	$(RM) $@
-	$(CC) -c -DDTYPE=short afni_pcor_update.c $(INFLAGS)
-	$(MV) afni_pcor_update.o afni_pcor_short.o
+	$(CC) -c -DDTYPE=short afni_pcor_update.c $(INFLAGS) -o $@
 
 ### End of reslicing routines
 
@@ -3318,15 +3325,17 @@ selenium_test: selenium_test.o
 
 qhull:
 	( cd qhulldir ;                                                  \
-	  $(MAKE) qhull rbox qdelaunay clean \
+	  $(MAKE) qhull rbox qdelaunay \
 	        'RM=$(RM)' 'CC=$(CC)' 'LFLAGS=$(LFLAGS)' ; \
+	  $(MAKE) clean 'RM=$(RM)' ; \
 	  $(MV) qhull rbox qdelaunay .. ; )
 
 # CYGWIN: we "mv" the result, so must name it correctly as qhull.exe
 
 qhull.exe:
 	( cd qhulldir ;                                                  \
-	  $(MAKE) qhull clean 'RM=$(RM)' 'CC=$(CC)' 'LFLAGS=$(LFLAGS)' ; \
+	  $(MAKE) qhull 'RM=$(RM)' 'CC=$(CC)' 'LFLAGS=$(LFLAGS)' ; \
+	  $(MAKE) clean 'RM=$(RM)' ; \
 	  $(MV) qhull.exe .. ; )
 
 #######
@@ -3732,7 +3741,7 @@ nifti1_test.o:nifti/niftilib/nifti1_test.c
 
 nifti1_test:nifti1_test.o nifti1_io.o znzlib.o
 	$(RM) $@
-	$(CC) -o nifti1_test nifti1_test.o nifti1_io.o znzlib.o $(LZLIB) -lm
+	$(CC) -o nifti1_test nifti1_test.o nifti1_io.o znzlib.o $(LZLIB) $(LZSTD) -lm
 
 nifti1_tool.o:nifti/niftilib/nifti1_tool.c
 	$(RM) $@
@@ -3740,7 +3749,7 @@ nifti1_tool.o:nifti/niftilib/nifti1_tool.c
 
 nifti1_tool:nifti1_tool.o nifti1_io.o znzlib.o
 	$(RM) $@
-	$(CC) -o $@ nifti1_tool.o nifti1_io.o znzlib.o $(LZLIB) -lm
+	$(CC) -o $@ nifti1_tool.o nifti1_io.o znzlib.o $(LZLIB) $(LZSTD) -lm
 
 nifti_tool.o:nifti/nifti2/nifti_tool.c
 	$(RM) $@
@@ -3748,18 +3757,18 @@ nifti_tool.o:nifti/nifti2/nifti_tool.c
 
 nifti_tool:nifti_tool.o nifti2_io.o znzlib.o
 	$(RM) $@
-	$(CC) -o nifti_tool nifti_tool.o nifti2_io.o znzlib.o $(LZLIB) -lm
+	$(CC) -o nifti_tool nifti_tool.o nifti2_io.o znzlib.o $(LZLIB) $(LZSTD) -lm
 
 nifti_tool.exe:nifti_tool.o nifti2_io.o znzlib.o
 	$(RM) $@
-	$(CC) -o nifti_tool.exe nifti_tool.o nifti2_io.o znzlib.o $(LZLIB) -lm
+	$(CC) -o nifti_tool.exe nifti_tool.o nifti2_io.o znzlib.o $(LZLIB) $(LZSTD) -lm
 
 # just compile completely, removing issue of libraries
 gifti_tool:nifti2_io.o znzlib.o
 	$(RM) $@
 	$(CC) -o gifti_tool $(INFLAGS) $(LFLAGS) 			\
 		gifti/gifti_tool.c gifti/gifti_io.c gifti/gifti_xml.c 	\
-		nifti2_io.o znzlib.o $(LGIFTI) $(LZLIB) -lm
+		nifti2_io.o znzlib.o $(LGIFTI) $(LZLIB) $(LZSTD) -lm
 
 gifti_choice.o:gifti_choice.c thd_gifti.c suma_gifti.c
 	$(RM) $@
@@ -3771,7 +3780,7 @@ cifti_tool:nifti2_io.o znzlib.o nifticdf.o nifti/cifti/cifti_tool.c
 	$(CC) -o cifti_tool $(INFLAGS) -Inifti/cifti                    \
 		nifti/cifti/cifti_tool.c                                \
 		nifti/cifti/afni_xml_io.c nifti/cifti/afni_xml.c        \
-		nifti2_io.o nifticdf.o znzlib.o $(LGIFTI) $(LZLIB) -lm
+		nifti2_io.o nifticdf.o znzlib.o $(LGIFTI) $(LZLIB) $(LZSTD) -lm
 
 tsdsim:tsdsim.o
 	$(RM) $@
@@ -3790,13 +3799,13 @@ tsdsolve:tsdsolve.c
 
 3dkmeans: avovk/3dkmeans.c avovk/cluster_floatNOMASK.c avovk/thd_segtools_fNM.c
 	( cd avovk ;	\
-	./@MakeLocalMake	;\
+	./@MakeLocalMake ../$(AFNI_MAIN_MAKEFILE)	;\
 	$(MAKE) afni_all  ;	\
 	cd ../	;		)
 
 libsegtools.a: avovk/cluster_floatNOMASK.c avovk/thd_segtools_fNM.c
 	( cd avovk ;	\
-	./@MakeLocalMake	;\
+	./@MakeLocalMake ../$(AFNI_MAIN_MAKEFILE)	;\
 	$(MAKE) libsegtools.a  ;	\
 	$(CP) libsegtools.a ../;	\
 	cd ../	;		)
@@ -3822,22 +3831,22 @@ ziggurat.o: zgaussian/ziggurat.c zgaussian/ziggurat.h
 #############
 #PTAYLOR directory
 
-ptaylor_all:
+ptaylor_all: libtracktools.a $(LIBMRI_OBJ)
 	( cd ptaylor ;	\
-	./@MakeLocalMake	;\
+	./@MakeLocalMake ../$(AFNI_MAIN_MAKEFILE)	;\
 	$(MAKE) afni_all  ;	\
 	cd ../	;		)
 
 ptaylor_install:
 	( cd ptaylor ;	\
-	./@MakeLocalMake	;\
+	./@MakeLocalMake ../$(AFNI_MAIN_MAKEFILE)	;\
 	$(MAKE) afni_install  ;	\
 	cd ../	;		)
 
 libtracktools.a:
 	( cd ptaylor ;	\
-	./@MakeLocalMake	;\
-	$(MAKE) clean libtracktools.a  ;	\
+	./@MakeLocalMake ../$(AFNI_MAIN_MAKEFILE)	;\
+	$(MAKE) libtracktools.a  ;	\
 	$(CP) libtracktools.a ../;	\
 	cd ../	;		)
 

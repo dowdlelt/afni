@@ -160,17 +160,19 @@ fprintf(stderr,"\Inputting datasets into initial view \n");
    /*-- 06 Apr 2005: try to read NIfTI-1 files [KRH and RWC] --*/
 
    if( !AFNI_noenv("AFNI_NIFTI_DATASETS") ){
-     char *ename[2] , **fn_nifti ;
+    char *ename[3] , **fn_nifti ;
      int num_nifti , ii ;
 
      STATUS("looking for NIFTI files") ;
 
      ename[0] = AFMALL(char, THD_MAX_NAME) ;
      ename[1] = AFMALL(char, THD_MAX_NAME) ;
+    ename[2] = AFMALL(char, THD_MAX_NAME) ;
      strcpy(ename[0],sess->sessname) ; strcat(ename[0],"*.nii") ;
      strcpy(ename[1],sess->sessname) ; strcat(ename[1],"*.nii.gz") ;
-     MCW_file_expand( 2,ename , &num_nifti,&fn_nifti ) ;  /* find files */
-     free(ename[0]) ; free(ename[1]) ;
+    strcpy(ename[2],sess->sessname) ; strcat(ename[2],"*.nii.zst") ;
+    MCW_file_expand( 3,ename , &num_nifti,&fn_nifti ) ;  /* find files */
+    free(ename[0]) ; free(ename[1]) ; free(ename[2]) ;
 
      if( num_nifti > 0 ){                               /* got some! */
        STATUS("opening NIFTI files") ;
