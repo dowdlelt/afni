@@ -24,6 +24,8 @@ static char helpstring[] =
   "\n"
   "  NONE     = no compression\n"
   "  GZIP     = use program 'gzip'\n"
+  "  PIGZ     = use program 'pigz'\n"
+  "  ZSTD     = use program 'zstd'\n"
   "  BZIP2    = use program 'bzip2'    [very slow; most compression]\n"
   "  COMPRESS = use program 'compress'\n"
   "\n"
@@ -38,7 +40,7 @@ static char helpstring[] =
 /*--------------------- strings for output format --------------------*/
 
 static char * comp_strings[] = {
- "NONE" , "GZIP" , "BZIP2" , "COMPRESS"
+ "NONE" , "GZIP" , "BZIP2" , "COMPRESS", "PIGZ", "ZSTD"
 } ;
 
 #define NUM_COMP_STRINGS (sizeof(comp_strings)/sizeof(char *))
