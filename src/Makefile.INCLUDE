@@ -12,6 +12,11 @@ CPU_TYPE ?= x86_64
 # LLIBS_X11 can be complete; can remove X from LLIBS    31 Jan 2020 [rickr]
 LLIBS_X11 ?= $(LLIBS)
 
+# zstd support: set USE_ZSTD = -DHAVE_ZSTD and LZSTD = -lzstd in the
+# platform Makefile (and add $(LZSTD) to LLIBS, as with $(LZLIB))
+USE_ZSTD ?=
+LZSTD ?=
+
 # netpbm is stored in varying locations under homebrew, allow for that
 NETPBMDIR ?= /usr/include/netpbm
 
@@ -31,10 +36,10 @@ F2C = f2c -A
 
 INFLAGS  = $(IFLAGS) -Icoxplot -Inifti/nifti2 -Inifti/niftilib              \
            -Inifti/nifticdf -Inifti/znzlib -I3DEdge/src -Irickr -Ileej3     \
-           $(USE_ZLIB) $(USE_GIFTI) $(USE_MRI_MINI) -If2c
+           $(USE_ZLIB) $(USE_ZSTD) $(USE_GIFTI) $(USE_MRI_MINI) -If2c
 ISFLAGS  = $(IFLAGS) -Inifti/nifti2 -I../nifti/niftilib -I../nifti/nifticdf \
            -I../nifti/znzlib -I../nifti/nifti2 -I../3DEdge/src -I../rickr   \
-           $(USE_ZLIB) -I../f2c
+           $(USE_ZLIB) $(USE_ZSTD) -I../f2c
 
 DOCS     = ../doc/ps/*.ps ../doc/README/README*                    \
            rickr/AFNI.changes.rickr rhammett/AFNI.changes.rhammett \
@@ -2819,7 +2824,7 @@ LIBMRI_MACOS: mrilib.h                                                  \
               $(LIBF2C_OBJ) libmrix.a libcoxplot.a $(EXLIBS)
 	$(RM) libmri.so
 	$(CC) -shared -fPIC -o libmri.so                                \
-              -L. $(LZLIB) $(LGIFTI) -lf2c $(LEXLIBS) -lmrix -lcoxplot  \
+              -L. $(LFLAGS) $(LZLIB) $(LZSTD) $(LGIFTI) -lf2c $(LEXLIBS) -lmrix -lcoxplot \
               -L/usr/lib -L/usr/local/lib -L/usr/X11R6/lib -L/sw/lib    \
               $(XROOT_L) $(XLIBS) -lXm -lXt -lXft                       \
               -lfontconfig -lpng -liconv -lXmu -lXp -lXpm -lXext -lX11  \
@@ -3732,7 +3737,7 @@ nifti1_test.o:nifti/niftilib/nifti1_test.c
 
 nifti1_test:nifti1_test.o nifti1_io.o znzlib.o
 	$(RM) $@
-	$(CC) -o nifti1_test nifti1_test.o nifti1_io.o znzlib.o $(LZLIB) -lm
+	$(CC) -o nifti1_test nifti1_test.o nifti1_io.o znzlib.o $(LFLAGS) $(LZLIB) $(LZSTD) -lm
 
 nifti1_tool.o:nifti/niftilib/nifti1_tool.c
 	$(RM) $@
@@ -3740,7 +3745,7 @@ nifti1_tool.o:nifti/niftilib/nifti1_tool.c
 
 nifti1_tool:nifti1_tool.o nifti1_io.o znzlib.o
 	$(RM) $@
-	$(CC) -o $@ nifti1_tool.o nifti1_io.o znzlib.o $(LZLIB) -lm
+	$(CC) -o $@ nifti1_tool.o nifti1_io.o znzlib.o $(LFLAGS) $(LZLIB) $(LZSTD) -lm
 
 nifti_tool.o:nifti/nifti2/nifti_tool.c
 	$(RM) $@
@@ -3748,18 +3753,18 @@ nifti_tool.o:nifti/nifti2/nifti_tool.c
 
 nifti_tool:nifti_tool.o nifti2_io.o znzlib.o
 	$(RM) $@
-	$(CC) -o nifti_tool nifti_tool.o nifti2_io.o znzlib.o $(LZLIB) -lm
+	$(CC) -o nifti_tool nifti_tool.o nifti2_io.o znzlib.o $(LFLAGS) $(LZLIB) $(LZSTD) -lm
 
 nifti_tool.exe:nifti_tool.o nifti2_io.o znzlib.o
 	$(RM) $@
-	$(CC) -o nifti_tool.exe nifti_tool.o nifti2_io.o znzlib.o $(LZLIB) -lm
+	$(CC) -o nifti_tool.exe nifti_tool.o nifti2_io.o znzlib.o $(LFLAGS) $(LZLIB) $(LZSTD) -lm
 
 # just compile completely, removing issue of libraries
 gifti_tool:nifti2_io.o znzlib.o
 	$(RM) $@
 	$(CC) -o gifti_tool $(INFLAGS) $(LFLAGS) 			\
 		gifti/gifti_tool.c gifti/gifti_io.c gifti/gifti_xml.c 	\
-		nifti2_io.o znzlib.o $(LGIFTI) $(LZLIB) -lm
+		nifti2_io.o znzlib.o $(LGIFTI) $(LZLIB) $(LZSTD) -lm
 
 gifti_choice.o:gifti_choice.c thd_gifti.c suma_gifti.c
 	$(RM) $@
@@ -3768,10 +3773,10 @@ gifti_choice.o:gifti_choice.c thd_gifti.c suma_gifti.c
 # compile separately, akin to gifti_tool; do not bother with .o files
 cifti_tool:nifti2_io.o znzlib.o nifticdf.o nifti/cifti/cifti_tool.c
 	$(RM) $@
-	$(CC) -o cifti_tool $(INFLAGS) -Inifti/cifti                    \
+	$(CC) -o cifti_tool $(INFLAGS) $(LFLAGS) -Inifti/cifti          \
 		nifti/cifti/cifti_tool.c                                \
 		nifti/cifti/afni_xml_io.c nifti/cifti/afni_xml.c        \
-		nifti2_io.o nifticdf.o znzlib.o $(LGIFTI) $(LZLIB) -lm
+		nifti2_io.o nifticdf.o znzlib.o $(LGIFTI) $(LZLIB) $(LZSTD) -lm
 
 tsdsim:tsdsim.o
 	$(RM) $@

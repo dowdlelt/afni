@@ -7,6 +7,8 @@ SYSTEM_TYPE = Linux
 # CPROF = -pg -g
 USE_ZLIB = -DHAVE_ZLIB
 LZLIB    = -lz
+USE_ZSTD = -DHAVE_ZSTD
+LZSTD    = -lzstd -lpthread
 USE_GIFTI = -DHAVE_GIFTI
 LGIFTI    = -lexpat
 
@@ -91,9 +93,9 @@ EXPROGS = $(GSLPROGS)
 
 # link choices are made above
 
-LLIBS  = -lmri -lf2c $(LDPYTHON) $(LZLIB) $(LGIFTI) -lm  -ldl -lc
+LLIBS  = -lmri -lf2c $(LDPYTHON) $(LZLIB) $(LZSTD) $(LGIFTI) -lm  -ldl -lc
 LLIBS_X11  = -lmri -lf2c $(XLIBS) -lXft -lXp -lXpm -lXext -lXmu -lSM -lICE -lX11 \
-         $(LDPYTHON) -lpng $(LZLIB) $(LGIFTI) -lm  -ldl -lc
+         $(LDPYTHON) -lpng $(LZLIB) $(LZSTD) $(LGIFTI) -lm  -ldl -lc
 
 # for static linking, as far as possible
 

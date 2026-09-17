@@ -32,6 +32,8 @@ usr_ROOT   = /usr/local
 
 USE_ZLIB  = -DHAVE_ZLIB
 LZLIB     = -lz
+USE_ZSTD  = -DHAVE_ZSTD
+LZSTD     = -lzstd -lpthread
 USE_GIFTI = -DHAVE_GIFTI
 LGIFTI    = -lexpat
 
@@ -145,7 +147,7 @@ EXPROGS = $(GSLPROGS)
 
 LLIBS  = -lmri -lf2c $(XLIBS) -lXft -lfontconfig \
          -lpng16 -liconv -lXmu -lXp -lXpm -lXext -lX11      \
-         $(LZLIB) $(LGIFTI) $(LDPYTHON) -lm -lc
+         $(LZLIB) $(LZSTD) $(LGIFTI) $(LDPYTHON) -lm -lc
 
 # this is called a hack - command to convert dyname -lXm to static for R_io.so
 #RLIB_CONVERT = | sed 's/-lXm/\/usr\/lib\/libXm.a/'

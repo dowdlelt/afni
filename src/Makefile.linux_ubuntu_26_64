@@ -11,6 +11,8 @@ SYSTEM_TYPE = Linux
 # CPROF = -pg -g
 USE_ZLIB = -DHAVE_ZLIB
 LZLIB    = -lz
+USE_ZSTD = -DHAVE_ZSTD
+LZSTD    = -lzstd -lpthread
 USE_GIFTI = -DHAVE_GIFTI
 LGIFTI    = -lexpat  #/usr/lib64/libexpat.
 
@@ -127,9 +129,9 @@ endif
 # for static linking to Motif, dynamic to all else
 
 # separate X11 libs from non-X11 ones
-LLIBS  = -lmri -lf2c $(LZLIB) $(LGIFTI) -lm  -ldl -lc
+LLIBS  = -lmri -lf2c $(LZLIB) $(LZSTD) $(LGIFTI) -lm  -ldl -lc
 LLIBS_X11 = -lmri -lf2c -lXm -lXpm -lXext -lXmu -lXt -lSM -lICE -lX11 \
-            $(LZLIB) $(LGIFTI) -lm  -ldl -lc
+            $(LZLIB) $(LZSTD) $(LGIFTI) -lm  -ldl -lc
 
 #LLIBS  = -lmri -lf2c /usr/X11R6/lib64/libXm.a -lXpm -lXext -lXmu -lXt -lSM -lICE -lX11 $(LZLIB) $(LGIFTI) -lm  -ldl -lc
 
