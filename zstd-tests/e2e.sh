@@ -8,11 +8,12 @@ fails=0
 pass() { echo "PASS  $*"; }
 fail() { echo "FAIL  $*"; fails=$((fails+1)); }
 t()    { local s=$(date +%s.%N); "$@" > /dev/null 2>&1; local rc=$?; printf "%6.2fs  %s\n" "$(echo "$(date +%s.%N) - $s" | bc)" "$*"; return $rc; }
+fsize()  { if stat -c %s "$1" > /dev/null 2>&1; then stat -c %s "$1"; else stat -f %z "$1"; fi; }   # GNU / BSD
 maxdiff() { rm -f diff_tmp+orig.*; 3dcalc -overwrite -a "$1" -b "$2" -expr 'abs(a-b)' -prefix diff_tmp+orig > /dev/null 2>&1 &&
             3dBrickStat -slow -max diff_tmp+orig.HEAD 2>/dev/null | tr -d ' '; rm -f diff_tmp+orig.*; }
 
 echo "== which: $(which 3dcopy)"
-echo "== input: $IN ($(stat -c %s "$IN") bytes)"
+echo "== input: $IN ($(fsize "$IN") bytes)"
 sync; cat "$IN" > /dev/null
 
 echo; echo "== writes"
@@ -44,12 +45,15 @@ for f in cli.nii.zst pz.nii.zst; do
 done
 
 echo; echo "== header-only reads (3dinfo): bytes read from file"
+have_strace=1; command -v strace > /dev/null 2>&1 || have_strace=0
+[ $have_strace -eq 0 ] && echo "  (no strace: skipping byte counts, timings below still apply)"
 for f in out.nii.gz out.nii.zst cli.nii.zst; do
+  [ $have_strace -eq 0 ] && continue
   rb=$(strace -f -e trace=openat,read,pread64 -e signal=none 3dinfo -nv $f 2>&1 >/dev/null |
        awk -v f="$f" '/openat/ && index($0,f) { match($0,/= [0-9]+$/); fd=substr($0,RSTART+2) }
                       fd!="" && /^(\[pid +[0-9]+\] )?(read|pread64)\(/ { split($0,a,"("); split(a[2],b,","); if (b[1]==fd) { match($0,/= [0-9]+$/); n+=substr($0,RSTART+2) } }
                       END { print n+0 }')
-  printf "  %-14s %10d bytes read of %d\n" $f "$rb" "$(stat -c %s $f)"
+  printf "  %-14s %10d bytes read of %d\n" $f "$rb" "$(fsize $f)"
 done
 t 3dinfo out.nii.gz; t 3dinfo out.nii.zst; t 3dinfo out_zst+orig.HEAD
 
@@ -73,7 +77,7 @@ done
 echo; echo "== compression levels (native .nii.zst)"
 for L in 1 3 6; do
   AFNI_ZSTD_LEVEL=$L t 3dcopy -overwrite ref.nii lev$L.nii.zst
-  printf "  level %d: %d bytes\n" $L $(stat -c %s lev$L.nii.zst)
+  printf "  level %d: %d bytes\n" $L $(fsize lev$L.nii.zst)
 done
 
 echo; [ $fails -eq 0 ] && echo "ALL PASSED" || echo "$fails FAILURES"

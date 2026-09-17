@@ -21,7 +21,12 @@ these files never end up in the pull request.
   3drefit, the .nii.gz/.nii.zst sibling case, read speed, and levels 1/3/6.
 
 - `gui.sh <afni bin dir> <dataset> <workdir>` — drives the AFNI GUI headlessly
-  (Xvfb, so Linux only) with two .nii.zst datasets in one session.
+  with two .nii.zst datasets in one session.  Needs `xvfb-run` and `timeout`,
+  so as written it is Linux-only; on macOS, XQuartz ships Xvfb at
+  /opt/X11/bin/Xvfb but neither wrapper exists, so start Xvfb directly.
+
+`e2e.sh` runs on Linux and macOS.  Without `strace` (i.e. on macOS) it skips
+the header-read byte counts and reports everything else.
 
 Use a real 4D dataset (a GB or so). Bugs in the frame index only appear past
 64 frames, which is about 512 MB at the default frame size.
