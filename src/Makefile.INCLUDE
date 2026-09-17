@@ -2824,7 +2824,7 @@ LIBMRI_MACOS: mrilib.h                                                  \
               $(LIBF2C_OBJ) libmrix.a libcoxplot.a $(EXLIBS)
 	$(RM) libmri.so
 	$(CC) -shared -fPIC -o libmri.so                                \
-              -L. $(LZLIB) $(LZSTD) $(LGIFTI) -lf2c $(LEXLIBS) -lmrix -lcoxplot \
+              -L. $(LFLAGS) $(LZLIB) $(LZSTD) $(LGIFTI) -lf2c $(LEXLIBS) -lmrix -lcoxplot \
               -L/usr/lib -L/usr/local/lib -L/usr/X11R6/lib -L/sw/lib    \
               $(XROOT_L) $(XLIBS) -lXm -lXt -lXft                       \
               -lfontconfig -lpng -liconv -lXmu -lXp -lXpm -lXext -lX11  \
