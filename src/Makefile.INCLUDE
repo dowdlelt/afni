@@ -6,6 +6,9 @@
 # be sure MAKE is defined      c/o J Bacon 22 May 2019
 MAKE ?= make
 
+# Top-level makefile used for this invocation (e.g., Makefile.linux_ubuntu_24_64)
+AFNI_MAIN_MAKEFILE ?= $(firstword $(MAKEFILE_LIST))
+
 # set default CPU_TYPE if not set already   8 Mar 2021
 CPU_TYPE ?= x86_64
 
@@ -438,6 +441,11 @@ programs:$(PROGRAMS)
 programs_noplug:$(PROGRAMS_NOPLUG)
 
 programs_exe:$(PROGRAMS_EXE)
+
+# Ensure binaries never start linking before shared/static libraries are ready.
+$(PROGRAMS): $(LIBMRI_OBJ) libmrix.a libcoxplot.a libtracktools.a $(EXLIBS)
+$(PROGRAMS_NOPLUG): $(LIBMRI_OBJ) libmrix.a libcoxplot.a $(EXLIBS)
+$(PROGRAMS_EXE): $(LIBMRI_OBJ) libmrix.a libcoxplot.a $(EXLIBS)
 
 # keep s list of compiled libraries
 LIBRARY_LIST = $(LIBMRI_OBJ) libmrix.a libcoxplot.a $(LIBF2C_OBJ) $(EXLIBS)
@@ -1815,53 +1823,43 @@ mcw_malloc.o:mcw_malloc.c
 
 afni_slice_short.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=short afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_short.o
+	$(CC) -c -DDTYPE=short afni_slice.c $(INFLAGS) -o $@
 
 afni_slice_float.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=float afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_float.o
+	$(CC) -c -DDTYPE=float afni_slice.c $(INFLAGS) -o $@
 
 afni_slice_byte.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=byte afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_byte.o
+	$(CC) -c -DDTYPE=byte afni_slice.c $(INFLAGS) -o $@
 
 afni_slice_int.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=int afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_int.o
+	$(CC) -c -DDTYPE=int afni_slice.c $(INFLAGS) -o $@
 
 afni_slice_complex.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=complex afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_complex.o
+	$(CC) -c -DDTYPE=complex afni_slice.c $(INFLAGS) -o $@
 
 afni_slice_rgbyte.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=rgbyte afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_rgbyte.o
+	$(CC) -c -DDTYPE=rgbyte afni_slice.c $(INFLAGS) -o $@
 
 afni_slice_rgba.o:3ddata.h afni_slice.c afni_warp.h
 	$(RM) $@
-	$(CC) -c -DDTYPE=rgba afni_slice.c $(INFLAGS)
-	$(MV) afni_slice.o afni_slice_rgba.o
+	$(CC) -c -DDTYPE=rgba afni_slice.c $(INFLAGS) -o $@
 
 afni_pcor_byte.o:afni_pcor.h afni_pcor_update.c
 	$(RM) $@
-	$(CC) -c -DDTYPE=byte afni_pcor_update.c $(INFLAGS)
-	$(MV) afni_pcor_update.o afni_pcor_byte.o
+	$(CC) -c -DDTYPE=byte afni_pcor_update.c $(INFLAGS) -o $@
 
 afni_pcor_float.o:afni_pcor.h afni_pcor_update.c
 	$(RM) $@
-	$(CC) -c -DDTYPE=float afni_pcor_update.c $(INFLAGS)
-	$(MV) afni_pcor_update.o afni_pcor_float.o
+	$(CC) -c -DDTYPE=float afni_pcor_update.c $(INFLAGS) -o $@
 
 afni_pcor_short.o:afni_pcor.h afni_pcor_update.c
 	$(RM) $@
-	$(CC) -c -DDTYPE=short afni_pcor_update.c $(INFLAGS)
-	$(MV) afni_pcor_update.o afni_pcor_short.o
+	$(CC) -c -DDTYPE=short afni_pcor_update.c $(INFLAGS) -o $@
 
 ### End of reslicing routines
 
@@ -3318,15 +3316,17 @@ selenium_test: selenium_test.o
 
 qhull:
 	( cd qhulldir ;                                                  \
-	  $(MAKE) qhull rbox qdelaunay clean \
+	  $(MAKE) qhull rbox qdelaunay \
 	        'RM=$(RM)' 'CC=$(CC)' 'LFLAGS=$(LFLAGS)' ; \
+	  $(MAKE) clean 'RM=$(RM)' ; \
 	  $(MV) qhull rbox qdelaunay .. ; )
 
 # CYGWIN: we "mv" the result, so must name it correctly as qhull.exe
 
 qhull.exe:
 	( cd qhulldir ;                                                  \
-	  $(MAKE) qhull clean 'RM=$(RM)' 'CC=$(CC)' 'LFLAGS=$(LFLAGS)' ; \
+	  $(MAKE) qhull 'RM=$(RM)' 'CC=$(CC)' 'LFLAGS=$(LFLAGS)' ; \
+	  $(MAKE) clean 'RM=$(RM)' ; \
 	  $(MV) qhull.exe .. ; )
 
 #######
@@ -3790,13 +3790,13 @@ tsdsolve:tsdsolve.c
 
 3dkmeans: avovk/3dkmeans.c avovk/cluster_floatNOMASK.c avovk/thd_segtools_fNM.c
 	( cd avovk ;	\
-	./@MakeLocalMake	;\
+	./@MakeLocalMake ../$(AFNI_MAIN_MAKEFILE)	;\
 	$(MAKE) afni_all  ;	\
 	cd ../	;		)
 
 libsegtools.a: avovk/cluster_floatNOMASK.c avovk/thd_segtools_fNM.c
 	( cd avovk ;	\
-	./@MakeLocalMake	;\
+	./@MakeLocalMake ../$(AFNI_MAIN_MAKEFILE)	;\
 	$(MAKE) libsegtools.a  ;	\
 	$(CP) libsegtools.a ../;	\
 	cd ../	;		)
@@ -3822,22 +3822,22 @@ ziggurat.o: zgaussian/ziggurat.c zgaussian/ziggurat.h
 #############
 #PTAYLOR directory
 
-ptaylor_all:
+ptaylor_all: libtracktools.a $(LIBMRI_OBJ)
 	( cd ptaylor ;	\
-	./@MakeLocalMake	;\
+	./@MakeLocalMake ../$(AFNI_MAIN_MAKEFILE)	;\
 	$(MAKE) afni_all  ;	\
 	cd ../	;		)
 
 ptaylor_install:
 	( cd ptaylor ;	\
-	./@MakeLocalMake	;\
+	./@MakeLocalMake ../$(AFNI_MAIN_MAKEFILE)	;\
 	$(MAKE) afni_install  ;	\
 	cd ../	;		)
 
 libtracktools.a:
 	( cd ptaylor ;	\
-	./@MakeLocalMake	;\
-	$(MAKE) clean libtracktools.a  ;	\
+	./@MakeLocalMake ../$(AFNI_MAIN_MAKEFILE)	;\
+	$(MAKE) libtracktools.a  ;	\
 	$(CP) libtracktools.a ../;	\
 	cd ../	;		)
 
