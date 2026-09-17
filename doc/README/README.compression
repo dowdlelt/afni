@@ -16,7 +16,7 @@ it, swap the bytes, and (optionally) recompress the file.
 
 How to Compress
 ===============
-You can compress the .BRIK files manually.  The following 3 programs
+You can compress the .BRIK files manually.  The following 4 programs
 are supported:
 
   Name      Suffix  Compression Command  Uncompress Command
@@ -24,14 +24,19 @@ are supported:
   compress   .Z     compress -v *.BRIK   uncompress *.BRIK.Z
   gzip       .gz    gzip -1v *.BRIK      gzip -d *.BRIK.gz
   bzip2      .bz2   bzip2 -1v *.BRIK     bzip2 -d *.BRIK.bz2
+  zstd       .zst   zstd -3 *.BRIK       zstd -d *.BRIK.zst
 
   "compress" is available on almost all Unix systems.
   "gzip" is available on many Unix systems, and can also be
      ftp-ed from the AFNI distribution site.
   "bzip2" is included in the AFNI distribution.  It generally
-     compresses more than the other two programs, but is much
+     compresses more than "compress" and "gzip", but is much
      slower at both compression and uncompression.  (See the
      file README.bzip2 for details about this program.)
+  "zstd" is available from most package managers.  It compresses
+     about as much as gzip but is several times faster, especially
+     at uncompression.  If the parallel version "pzstd" is
+     installed, AFNI uses it instead, which is faster still.
 
 For large MR image datasets, "compress" and "gzip" have about the
 same compression factor and take about the same CPU time (at least
@@ -42,10 +47,30 @@ Do NOT compress the .HEAD files!  AFNI will not be able to read them.
 Automatic Compression
 =====================
 If you set the environment variable AFNI_COMPRESSOR to one of
-the strings "COMPRESS", "GZIP", or "BZIP2", then most programs
-will automatically pass .BRIK data through the appropriate
-compression program as it is written to disk.  Note that this
-will slow down dataset write operations.
+the strings "COMPRESS", "GZIP", "BZIP2", "PIGZ", or "ZSTD", then
+most programs will automatically pass .BRIK data through the
+appropriate compression program as it is written to disk.  Note
+that this will slow down dataset write operations, though "ZSTD"
+much less than the others.
+
+NIfTI datasets can also be compressed with zstd, by giving a
+prefix ending in ".nii.zst".  Unlike the .BRIK compressors, this
+is done inside AFNI (with libzstd), so no external program is
+needed.  Such files are ordinary zstd files: they can be read by
+"zstd -d" and by other software that supports zstd.  AFNI writes
+them as a series of independently compressed frames, in the same
+layout as "pzstd", which lets AFNI compress and uncompress them
+on several CPUs at once, and lets it read a dataset header
+without uncompressing the whole file.  Three environment
+variables tune this: AFNI_ZSTD_LEVEL (default 3),
+AFNI_ZSTD_THREADS (default: the number of CPUs, at most 16), and
+AFNI_ZSTD_FRAME_MB (default 8).
+
+Support for ".nii.zst" requires that AFNI was built with libzstd
+(USE_ZSTD in the platform Makefile).  If it was not, AFNI can
+still read and write ".BRIK.zst" files using the external zstd
+program, and will report an error for ".nii.zst" rather than
+write an unreadable file.
 
 Penalties for Using Compression
 ===============================
