@@ -17,7 +17,7 @@ PTAYLOR_INCLUDE_PATH = ${IFLAGS} -I/usr/local/include \
                  -I../ -I../niml/  -I../SUMA/ -I../f2c
 
 PTAYLOR_LINK_PATH = -L.. ${LFLAGS} -L/usr/lib -L/usr/local/lib 
-PTAYLOR_LINK_LIB = ${LLIBS} -lmri $(LZSTD)
+PTAYLOR_LINK_LIB = ${LLIBS} -lmri
 
 PTAYLOR_HDRS = DoTrackit.h TrackIO.h rsfc.h diffusiony.h FuncTrac.h \
                roiing.h Fat_Labels.h colorbasic.h LS_funcs.h   \
@@ -25,10 +25,6 @@ PTAYLOR_HDRS = DoTrackit.h TrackIO.h rsfc.h diffusiony.h FuncTrac.h \
                thd_stcorr2.h
 
 WARNTOPT = ${WARNOPT}
-
-ifneq ($(strip $(LZSTD)),)
-LLIBS += $(LZSTD)
-endif
 
 #library only
 ${PTAYLORLIB} : ${PTAYLOR_OBJS} 

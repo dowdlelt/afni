@@ -15,10 +15,6 @@ AVOVK_INCLUDE_PATH = ${IFLAGS} -I/usr/local/include \
 AVOVK_LINK_PATH = ${LFLAGS} -L/usr/lib -L/usr/local/lib -L../ 
 AVOVK_LINK_LIB = ${LLIBS} -lmri
 
-ifneq ($(strip $(LZSTD)),)
-LLIBS += $(LZSTD)
-endif
-
 AVOVK_HDRS = thd_segtools_fNM.h # thd_segtools.h thd_segtools_fNM.h
 
 AFNI_OBJS = ../xutil.o ../LiteClue.o
