@@ -4,8 +4,6 @@ include(FindStandardMathLibrary)
 include(BuildType)
 include(afni_macos_dependency_hints)
 find_package(ZLIB REQUIRED)
-find_path(ZSTD_INCLUDE_DIR NAMES zstd.h REQUIRED)
-find_library(ZSTD_LIBRARY NAMES zstd REQUIRED)
 optional_bundle(src/f2c)
 set_if_not_defined(USE_SYSTEM_QHULL ON)
 

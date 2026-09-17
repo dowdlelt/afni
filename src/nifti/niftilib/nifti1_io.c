@@ -2680,7 +2680,7 @@ char * nifti_find_file_extension( const char * name )
 *//*--------------------------------------------------------------------*/
 int nifti_is_gzfile(const char* fname)
 {
-   /* return compression mode: 1=.gz, 2=.zst, 0=none */
+  /* return 1 if the filename ends with .gz, 2 if .zst, else 0 */
   if (fname == NULL) { return 0; }
 #ifdef HAVE_ZLIB
   { /* just so len doesn't generate compile warning */
@@ -2689,11 +2689,12 @@ int nifti_is_gzfile(const char* fname)
      if (fileext_compare(fname + strlen(fname) - 3,".gz")==0) { return 1; }
   }
 #endif
-   {
-       size_t len = strlen(fname);
-       if (len < 4) return 0;
-       if (fileext_compare(fname + strlen(fname) - 4,".zst")==0) { return 2; }
-   }
+  { /* zstd files are recognized even without HAVE_ZSTD, so that
+       znzopen() can fail with a message rather than read garbage */
+     size_t len = strlen(fname);
+     if (len < 4) return 0;
+     if (fileext_compare(fname + strlen(fname) - 4,".zst")==0) { return 2; }
+  }
   return 0;
 }
 
@@ -2824,7 +2825,7 @@ char * nifti_findhdrname(const char* fname)
       make_uppercase(extzst);
    }
 
-   hdrname = (char *)calloc(sizeof(char),strlen(basename)+8);
+   hdrname = (char *)calloc(sizeof(char),strlen(basename)+9);
    if( !hdrname ){
       fprintf(stderr,"** nifti_findhdrname: failed to alloc hdrname\n");
       free(basename);
@@ -2838,7 +2839,7 @@ char * nifti_findhdrname(const char* fname)
    strcat(hdrname,extzip);
    if (nifti_fileexists(hdrname)) { free(basename); return hdrname; }
 #endif
-   strcpy(hdrname,basename);
+   strcpy(hdrname,basename);            /* then .zst */
    strcat(hdrname,elist[efirst]);
    strcat(hdrname,extzst);
    if (nifti_fileexists(hdrname)) { free(basename); return hdrname; }
@@ -2891,14 +2892,12 @@ char * nifti_findimgname(const char* fname , int nifti_type)
    char  extnia[5] = ".nia";
    const char *ext;
    int   first;  /* first extension to use */
-   int   is_data_name = 0;
-   size_t fnlen;
 
    /* check input file(s) for sanity */
    if( !nifti_validfilename(fname) ) return NULL;
 
    basename =  nifti_makebasename(fname);
-   imgname = (char *)calloc(sizeof(char),strlen(basename)+8);
+   imgname = (char *)calloc(sizeof(char),strlen(basename)+9);
    if( !imgname ){
       fprintf(stderr,"** nifti_findimgname: failed to alloc imgname\n");
       free(basename);
@@ -2915,37 +2914,11 @@ char * nifti_findimgname(const char* fname , int nifti_type)
       make_uppercase(extnia);
    }
 
-   /* if an explicit image filename exists, prefer it over sibling search */
-   if( ext && nifti_fileexists(fname) ) {
-      fnlen = strlen(fname);
-
-      if( fileext_n_compare(ext,elist[0],4) == 0 ||
-          fileext_n_compare(ext,elist[1],4) == 0 ) {
-         is_data_name = 1;
-      }
-#ifdef HAVE_ZLIB
-      else if( fileext_n_compare(ext,extzip,3) == 0 && fnlen >= 7 ) {
-         if( fileext_n_compare(fname+fnlen-7,".nii.gz",7) == 0 ||
-             fileext_n_compare(fname+fnlen-7,".img.gz",7) == 0 )
-            is_data_name = 1;
-      }
-#endif
-      else if( fileext_n_compare(ext,extzst,4) == 0 && fnlen >= 8 ) {
-         if( fileext_n_compare(fname+fnlen-8,".nii.zst",8) == 0 ||
-             fileext_n_compare(fname+fnlen-8,".img.zst",8) == 0 )
-            is_data_name = 1;
-      }
-      else if( nifti_type == NIFTI_FTYPE_ASCII &&
-               fileext_n_compare(ext,extnia,4) == 0 ) {
-         is_data_name = 1;
-      }
-
-      if( is_data_name ) {
-         char *retname = nifti_strdup(fname);
-         free(basename);
-         free(imgname);
-         return retname;
-      }
+   /* if the given name exists and is not a header name, use it directly,
+      so that foo.nii.zst is not paired with a sibling foo.nii.gz */
+   if( ext && fileext_n_compare(ext,".hdr",4) != 0 && nifti_fileexists(fname) ){
+      free(basename); free(imgname);
+      return nifti_strdup(fname);
    }
 
    /* only valid extension for ASCII type is .nia, handle first */
@@ -2971,10 +2944,10 @@ char * nifti_findimgname(const char* fname , int nifti_type)
       strcat(imgname,extzip);
       if (nifti_fileexists(imgname)) { free(basename); return imgname; }
 #endif
-   strcpy(imgname,basename);
-   strcat(imgname,elist[first]);
-   strcat(imgname,extzst);
-   if (nifti_fileexists(imgname)) { free(basename); return imgname; }
+      strcpy(imgname,basename);         /* then .zst */
+      strcat(imgname,elist[first]);
+      strcat(imgname,extzst);
+      if (nifti_fileexists(imgname)) { free(basename); return imgname; }
 
       /* failed to find image file with expected extension, try the other */
 
@@ -2985,10 +2958,10 @@ char * nifti_findimgname(const char* fname , int nifti_type)
       strcat(imgname,extzip);
       if (nifti_fileexists(imgname)) { free(basename); return imgname; }
 #endif
-   strcpy(imgname,basename);
-   strcat(imgname,elist[1-first]);
-   strcat(imgname,extzst);
-   if (nifti_fileexists(imgname)) { free(basename); return imgname; }
+      strcpy(imgname,basename);
+      strcat(imgname,elist[1-first]);
+      strcat(imgname,extzst);
+      if (nifti_fileexists(imgname)) { free(basename); return imgname; }
    }
 
    /**- if nothing has been found, return NULL */
@@ -3027,7 +3000,7 @@ char * nifti_makehdrname(const char * prefix, int nifti_type, int check,
    if( !nifti_validfilename(prefix) ) return NULL;
 
    /* add space for extension, optional ".gz", and null char */
-   iname = (char *)calloc(sizeof(char),strlen(prefix)+8);
+   iname = (char *)calloc(sizeof(char),strlen(prefix)+9);
    if( !iname ){ fprintf(stderr,"** small malloc failure!\n"); return NULL; }
    strcpy(iname, prefix);
 
@@ -3099,7 +3072,7 @@ char * nifti_makeimgname(const char * prefix, int nifti_type, int check,
    if( !nifti_validfilename(prefix) ) return NULL;
 
    /* add space for extension, optional ".gz", and null char */
-   iname = (char *)calloc(sizeof(char),strlen(prefix)+8);
+   iname = (char *)calloc(sizeof(char),strlen(prefix)+9);
    if( !iname ){ fprintf(stderr,"** small malloc failure!\n"); return NULL; }
    strcpy(iname, prefix);
 

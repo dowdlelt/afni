@@ -544,7 +544,6 @@ target_link_libraries(
   PUBLIC  m 
           libheaders
   PRIVATE 
-    ${ZSTD_LIBRARY}
           $<$<BOOL:${USE_GIFTI}>:GIFTI::giftiio>
           AFNI::3DEdge
           AFNI::eispack
