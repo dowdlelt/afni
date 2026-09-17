@@ -28,7 +28,7 @@ are required:
  - change the name of all function calls, replacing the initial character
    f with the znz  (e.g. fseek becomes znzseek)
  - add a third parameter to all calls to znzopen (previously fopen)
-   that specifies whether to use compression (1) or not (0)
+   that specifies whether to use compression (1=gzip, 2=zstd) or not (0)
  - use znz_isnull rather than any (pointer == NULL) comparisons in the code
 
 NB: seeks for writable files with compression are quite restricted
@@ -76,12 +76,20 @@ extern "C" {
 #endif
 #endif
 
+/* compression codes for znzopen(use_compression) */
+#define ZNZ_COMPRESS_NONE 0
+#define ZNZ_COMPRESS_GZIP 1
+#define ZNZ_COMPRESS_ZSTD 2
+
+struct znz_zstd;   /* opaque zstd state (requires HAVE_ZSTD), see znzlib.c */
+
 struct znzptr {
   int withz;
   FILE* nzfptr;
 #ifdef HAVE_ZLIB
   gzFile zfptr;
 #endif
+  struct znz_zstd *zst;
 } ;
 
 /* the type for all file pointers */
@@ -95,7 +103,8 @@ typedef struct znzptr * znzFile;
 
 /* Note extra argument (use_compression) where
    use_compression==0 is no compression
-   use_compression!=0 uses zlib (gzip) compression
+   use_compression==2 uses zstd compression (ZNZ_COMPRESS_ZSTD, HAVE_ZSTD)
+   any other nonzero value uses zlib (gzip) compression
 */
 
 znzFile znzopen(const char *path, const char *mode, int use_compression);
