@@ -63,7 +63,7 @@ NB: seeks for writable files with compression are quite restricted
 
 #define ZNZ_SKIP_MAGIC      0x184D2A50U  /* pzstd skippable frame magic   */
 #define ZNZ_SKIP_HSIZE      12           /* magic + size(4) + frame csize */
-#define ZNZ_FIRST_FRAME     ((size_t)1<<20)
+#define ZNZ_FIRST_FRAME     ((size_t)256<<10)  /* small, so header reads are cheap */
 #define ZNZ_MAX_THREADS     16
 
 typedef struct {
