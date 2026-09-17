@@ -24,7 +24,7 @@ ENTRY("THD_fetch_dset") ;
    if( cp == NULL                          &&
        !STRING_HAS_SUFFIX(hp,".nii")       &&  /* 28 Aug 2003 */
        !STRING_HAS_SUFFIX(hp,".nii.gz")    &&  /* 06 Apr 2005 */
-         !STRING_HAS_SUFFIX(hp,".nii.zst")   &&
+       !STRING_HAS_SUFFIX(hp,".nii.zst")   &&
        !STRING_HAS_SUFFIX(hp,".niml")      &&  /* 16 Jun 2006 [rickr] */
        !STRING_HAS_SUFFIX(hp,".niml.dset") &&
        !STRING_HAS_SUFFIX(hp,".gii")       &&  /* 13 Feb 2008 [rickr] */

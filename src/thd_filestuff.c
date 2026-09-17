@@ -744,9 +744,9 @@ ENTRY("THD_check_for_duplicates") ;
           if( strcmp(di+li-5,".HEAD"   ) == 0 ) di[li-5] = '\0' ;
      else if( strcmp(di+li-5,".BRIK"   ) == 0 ) di[li-5] = '\0' ;
      else if( strcmp(di+li-8,".BRIK.gz") == 0 ) di[li-8] = '\0' ;
-   else if( strcmp(di+li-9,".BRIK.zst") == 0 ) di[li-9] = '\0' ;
+     else if( strcmp(di+li-9,".BRIK.zst")== 0 ) di[li-9] = '\0' ;
      else if( strcmp(di+li-7,".nii.gz" ) == 0 ) di[li-3] = '\0' ;
-   else if( strcmp(di+li-8,".nii.zst") == 0 ) di[li-4] = '\0' ;
+     else if( strcmp(di+li-8,".nii.zst" ) == 0 ) di[li-4] = '\0' ;
      else if( strcmp(di+li-1,"."       ) == 0 ) di[li-1] = '\0' ;
 
      for( jj=ii+1 ; jj < ns ; jj++ ){
@@ -756,9 +756,9 @@ ENTRY("THD_check_for_duplicates") ;
             if( strcmp(dj+lj-5,".HEAD"   ) == 0 ) dj[lj-5] = '\0' ;
        else if( strcmp(dj+lj-5,".BRIK"   ) == 0 ) dj[lj-5] = '\0' ;
        else if( strcmp(dj+lj-8,".BRIK.gz") == 0 ) dj[lj-8] = '\0' ;
-        else if( strcmp(dj+lj-9,".BRIK.zst") == 0 ) dj[lj-9] = '\0' ;
+       else if( strcmp(dj+lj-9,".BRIK.zst")== 0 ) dj[lj-9] = '\0' ;
        else if( strcmp(dj+lj-7,".nii.gz" ) == 0 ) dj[lj-3] = '\0' ;
-        else if( strcmp(dj+lj-8,".nii.zst") == 0 ) dj[lj-4] = '\0' ;
+       else if( strcmp(dj+lj-8,".nii.zst" ) == 0 ) dj[lj-4] = '\0' ;
        else if( strcmp(dj+lj-1,"."       ) == 0 ) dj[lj-1] = '\0' ;
 
        if( strcmp(di,dj) == 0 ){

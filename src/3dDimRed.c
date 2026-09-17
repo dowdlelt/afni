@@ -51,6 +51,9 @@ static char * append_to_prefix( char *pre , char *app )
    } else if( STRING_HAS_SUFFIX(prA,".nii.gz") && lll > 7 ){
      prA[lll-7] = '\0' ;
      prB        = strdup(".nii.gz") ;
+   } else if( STRING_HAS_SUFFIX(prA,".nii.zst") && lll > 8 ){
+     prA[lll-8] = '\0' ;
+     prB        = strdup(".nii.zst") ;
    } else {
      prB        = strdup("\0") ;
    }
