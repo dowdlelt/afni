@@ -573,6 +573,9 @@ DUMP1 ;
          } else if (STRING_HAS_SUFFIX( prefix,".nii.gz")) {
             p2 = strstr( prefix, ".nii.gz");
             prefix[p2- prefix]='\0';
+         } else if (STRING_HAS_SUFFIX( prefix,".nii.zst")) {
+            p2 = strstr( prefix, ".nii.zst");
+            prefix[p2- prefix]='\0';
          }
       }
       sprintf(MRG_edopt.rankmapname,"%s/%s.rankmap.1D",

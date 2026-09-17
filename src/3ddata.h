@@ -75,6 +75,7 @@ extern "C" {
 
 #define PREFIX_IS_NIFTI(ss) ( STRING_HAS_SUFFIX(ss,".nii")    ||  \
                               STRING_HAS_SUFFIX(ss,".nii.gz") ||  \
+                              STRING_HAS_SUFFIX(ss,".nii.zst")|| \
                               STRING_HAS_SUFFIX(ss,".hdr")      )
 
 /***************************** dimensions ***************************/

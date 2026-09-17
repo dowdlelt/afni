@@ -1798,7 +1798,7 @@ void VL_command_line(void)
         VL_savedisp_prA = strdup(VL_savedisp) ; lll = strlen(VL_savedisp_prA ) ;
 
         /* prA = first part of output prefix (to be appended with "_DX" etc.),
-           prB = last part of output prefix (".nii" or ".nii.gz" or nothing at all) */
+           prB = last part of output prefix (".nii", ".nii.gz", ".nii.zst" or nothing) */
 
         if( STRING_HAS_SUFFIX(VL_savedisp_prA,".nii") ){
           if( lll < 5 )
@@ -1810,6 +1810,11 @@ void VL_command_line(void)
             ERROR_exit("%s '%s' is invalid output dataset name",Argv[Iarg-1],VL_savedisp) ;
           VL_savedisp_prA[lll-7] = '\0' ;
           VL_savedisp_prB        = strdup(".nii.gz") ;
+        } else if( STRING_HAS_SUFFIX(VL_savedisp_prA,".nii.zst") ){
+          if( lll < 9 )
+            ERROR_exit("%s '%s' is invalid output dataset name",Argv[Iarg-1],VL_savedisp) ;
+          VL_savedisp_prA[lll-8] = '\0' ;
+          VL_savedisp_prB        = strdup(".nii.zst") ;
         } else {
           VL_savedisp_prB = strdup("\0") ;
         }

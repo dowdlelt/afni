@@ -23,13 +23,13 @@ extern THD_3dim_dataset *THD_3dim_G_from_ROIstring(char *shar);
    (as found in THD_open_one_dataset())         28 Jun 2006 [rickr]
 -------------------------------------------------------------------*/
 static char * file_extension_list[] = {
-    ".HEAD", ".BRIK", ".BRIK.gz",
+    ".HEAD", ".BRIK", ".BRIK.gz", ".BRIK.zst",
     ".mnc",
     ".mri",
     ".svl",
     ".1D", ".1D.dset", ".1D.do", ".txt",
     ".3D",
-    ".nii", ".nii.gz", ".nia", ".hdr", ".img",
+    ".nii", ".nii.gz", ".nii.zst", ".nia", ".hdr", ".img",
     ".mpg", ".mpeg", ".MPG", ".MPEG",
     ".niml", ".niml.dset", ".niml.do",
     ".gii", ".gii.dset", ".niml.tract" , ".jpg" , ".jpeg" , ".png" , ".heic"
@@ -235,6 +235,7 @@ ENTRY("THD_open_one_dataset") ;
 
    if( STRING_HAS_SUFFIX(pathname,".nii")    ||
        STRING_HAS_SUFFIX(pathname,".nii.gz") ||
+       STRING_HAS_SUFFIX(pathname,".nii.zst") ||
        STRING_HAS_SUFFIX(pathname,".nia")      ){
 
      /* let NIFTI decide if the dataset is there   10 Jun 2015 [ricrk] */
@@ -421,6 +422,8 @@ static int THD_deconflict_nifti( char *brick_name )
      ls = lp-4 ; strcpy(suf,".nii") ;
    } else if( STRING_HAS_SUFFIX(brick_name,".nii.gz") ){
      ls = lp-7 ; strcpy(suf,".nii.gz") ;
+   } else if( STRING_HAS_SUFFIX(brick_name,".nii.zst") ){
+     ls = lp-8 ; strcpy(suf,".nii.zst") ;
    } else if( STRING_HAS_SUFFIX(brick_name,".hdr") ){
      ls = lp-4 ; strcpy(suf,".hdr") ;
    } else {
@@ -544,7 +547,8 @@ ENTRY("storage_mode_from_filename");
 
     if( STRING_HAS_SUFFIX(fname, ".HEAD") ||
         STRING_HAS_SUFFIX(fname, ".BRIK") ||
-        STRING_HAS_SUFFIX(fname, ".BRIK.gz") )  RETURN(STORAGE_BY_BRICK);
+        STRING_HAS_SUFFIX(fname, ".BRIK.gz") ||
+        STRING_HAS_SUFFIX(fname, ".BRIK.zst") ) RETURN(STORAGE_BY_BRICK);
 
 
     if( 0 )                                     RETURN(STORAGE_BY_VOLUMES);
@@ -562,6 +566,7 @@ ENTRY("storage_mode_from_filename");
 
     if( STRING_HAS_SUFFIX(fname, ".nii")    ||
         STRING_HAS_SUFFIX(fname, ".nii.gz") ||
+        STRING_HAS_SUFFIX(fname, ".nii.zst")||
         STRING_HAS_SUFFIX(fname, ".nia")    ||
         STRING_HAS_SUFFIX(fname, ".hdr")    ||
         STRING_HAS_SUFFIX(fname, ".img") )      RETURN(STORAGE_BY_NIFTI);

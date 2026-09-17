@@ -2460,6 +2460,9 @@ static int remove_SM_suffix(char prefix[])
    } else if( (sp = ends_at(prefix, ".nii.gz")) != NULL ) {
       *sp = '\0';
       smode = STORAGE_BY_NIFTI;
+   } else if( (sp = ends_at(prefix, ".nii.zst")) != NULL ) {
+      *sp = '\0';
+      smode = STORAGE_BY_NIFTI;
    }
 
    if( smode && verbose )

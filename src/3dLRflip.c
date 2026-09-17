@@ -149,6 +149,10 @@ int main( int argc , char * argv[] )
                   p2 = strstr(prefix, ".nii.gz");
                   prefix[p2-prefix]='\0';
                   sprintf(ext,".nii.gz");
+               } else if (STRING_HAS_SUFFIX(prefix,".nii.zst")) {
+                  p2 = strstr(prefix, ".nii.zst");
+                  prefix[p2-prefix]='\0';
+                  sprintf(ext,".nii.zst");
                } else {
                   ext[0] = '\0';
                }
@@ -169,6 +173,10 @@ int main( int argc , char * argv[] )
                   p2 = strstr(prefix, ".nii.gz");
                   prefix[p2-prefix]='\0';
                   sprintf(ext,".nii.gz");
+               } else if (STRING_HAS_SUFFIX(prefix,".nii.zst")) {
+                  p2 = strstr(prefix, ".nii.zst");
+                  prefix[p2-prefix]='\0';
+                  sprintf(ext,".nii.zst");
                } else {
                   ext[0] = '\0';
                }

@@ -122,6 +122,7 @@ ENTRY("THD_read_all_atr") ;
    if( STRING_HAS_SUFFIX(headername,".mnc")    ) EXRETURN ;
    if( STRING_HAS_SUFFIX(headername,".nii")    ) EXRETURN ;
    if( STRING_HAS_SUFFIX(headername,".nii.gz") ) EXRETURN ;
+   if( STRING_HAS_SUFFIX(headername,".nii.zst") ) EXRETURN ;
    if( STRING_HAS_SUFFIX(headername,".mri")    ) EXRETURN ;
    if( STRING_HAS_SUFFIX(headername,".ctf")    ) EXRETURN ;
    if( STRING_HAS_SUFFIX(headername,".hdr")    ) EXRETURN ;

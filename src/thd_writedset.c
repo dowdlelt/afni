@@ -177,6 +177,7 @@ ENTRY("THD_write_3dim_dataset") ;
    ppp = DSET_PREFIX(dset) ;
    if( STRING_HAS_SUFFIX(ppp,".nii")    ||
        STRING_HAS_SUFFIX(ppp,".nii.gz") ||
+       STRING_HAS_SUFFIX(ppp,".nii.zst")||
        STRING_HAS_SUFFIX(ppp,".hdr")    || 
        use_NIFTI_format                 ||
        dset->dblk->diskptr->storage_mode == STORAGE_BY_NIFTI){
@@ -190,6 +191,7 @@ ENTRY("THD_write_3dim_dataset") ;
 
      if( !STRING_HAS_SUFFIX(options.infile_name,".nii")    &&
          !STRING_HAS_SUFFIX(options.infile_name,".nii.gz") &&
+         !STRING_HAS_SUFFIX(options.infile_name,".nii.zst") &&
          !STRING_HAS_SUFFIX(options.infile_name,".hdr")      ) /* 11 Oct 2005 */
        strcat(options.infile_name,".nii") ;
 

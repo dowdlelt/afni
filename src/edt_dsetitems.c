@@ -27,6 +27,10 @@
              STRING_HAS_SUFFIX((fname),"+acpc.BRIK.gz") || \
              STRING_HAS_SUFFIX((fname),"+tlrc.BRIK.gz") ) {/* ZSS Feb 2012 */   \
      (fname)[ll-13] = '\0' ; \
+   } else if (STRING_HAS_SUFFIX((fname),"+orig.BRIK.zst") || \
+              STRING_HAS_SUFFIX((fname),"+acpc.BRIK.zst") || \
+              STRING_HAS_SUFFIX((fname),"+tlrc.BRIK.zst") ) {    \
+     (fname)[ll-14] = '\0' ; \
    }  \
 }
 
@@ -569,21 +573,25 @@ fprintf(stderr,"EDIT_dset_items: iarg=%d flag_arg=%d\n",iarg,flag_arg) ;
       }
 
       /** output of NIfTI-1.1 dataset: 06 May 2005 **/
-      /* if the prefix ends in .nii or .nii.gz, change filename in brick_name */
-      if( nprefix != NULL && ( STRING_HAS_SUFFIX(nprefix,".nii") ||
-                               STRING_HAS_SUFFIX(nprefix,".nii.gz") ) ){
+      /* if the prefix ends in .nii, .nii.gz or .nii.zst, change brick_name */
+      if( nprefix != NULL && ( STRING_HAS_SUFFIX(nprefix,".nii")    ||
+                               STRING_HAS_SUFFIX(nprefix,".nii.gz") ||
+                               STRING_HAS_SUFFIX(nprefix,".nii.zst") ) ){
         char *fname = dset->dblk->diskptr->brick_name ;
         int   gzpre = STRING_HAS_SUFFIX(nprefix,".nii.gz") ;
+        int   zstpre = STRING_HAS_SUFFIX(nprefix,".nii.zst") ;
         int   ll = strlen(fname) ; /* for DEVIEW macro */
         STRING_DEVIEW_DEEXT_BRICK(fname) ;
 
         /* make sure brick_name suffix matches that of prefix      */
-        /* if gzpre, include .nii.gz, else include .nii            */
+        /* if gzpre/zstpre, include .nii.gz/.nii.zst, else .nii    */
         /* no automatic compression for NIFTI   1 Jun 2021 [rickr] */
 
         if ( gzpre && ! STRING_HAS_SUFFIX(fname,".nii.gz") )
             strcat(fname,".nii.gz") ;
-        else if ( ! gzpre && ! STRING_HAS_SUFFIX(fname,".nii") )
+        else if ( zstpre && ! STRING_HAS_SUFFIX(fname,".nii.zst") )
+            strcat(fname,".nii.zst") ;
+        else if ( ! gzpre && ! zstpre && ! STRING_HAS_SUFFIX(fname,".nii") )
             strcat(fname,".nii");
 
         if (dset->dblk->diskptr->header_name) { /* ZSS: April 26 2012 */
