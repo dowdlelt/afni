@@ -26,19 +26,16 @@ static char *COMPRESS_unprogram[]  = { "gzip -dc '%s'"  ,
 
 /*----------------------------------------------------------------------------*/
 /* Check if pigz can be used in place of gzip for compression,
-   and if pbzip2 can be used in place of bzip2.
+   if pbzip2 can be used in place of bzip2,
+   and if pzstd can be used in place of zstd.
 *//*--------------------------------------------------------------------------*/
 
 static void COMPRESS_setup_programs(void)  /* 03 May 2013 */
 {
    char *pgname=NULL ;
-   char *zthr_env=NULL ;
-   static char *cprog_gzip=NULL , *cprog_bzip2=NULL ;
-   static char *cprog_zstd=NULL ;
-   static char *uprog_gzip=NULL , *uprog_bzip2=NULL ;
-   static char *uprog_zstd=NULL ;
+   static char *cprog_gzip=NULL , *cprog_bzip2=NULL , *cprog_zstd=NULL ;
+   static char *uprog_gzip=NULL , *uprog_bzip2=NULL , *uprog_zstd=NULL ;
    static int first=1 ;
-   int zstd_threads = 0 ;
    int        cind=-1;
    int    skip_pigz=AFNI_yesenv("AFNI_DONT_USE_PIGZ") ;
 
@@ -80,23 +77,36 @@ static void COMPRESS_setup_programs(void)  /* 03 May 2013 */
      COMPRESS_unprogram[1] = uprog_bzip2 ;
    }
 
-                                  pgname = THD_find_executable("zstd") ;
-    if( pgname == NULL ){
-       COMPRESS_program_ok[4] = 0 ;
-    } else {
-       zthr_env = getenv("AFNI_ZSTD_THREADS") ;
-       if( zthr_env != NULL && *zthr_env != '\0' ){
-          zstd_threads = (int)strtol(zthr_env,NULL,10) ;
-          if( zstd_threads < 0 ) zstd_threads = 0 ;
-       }
+   /* zstd: prefer pzstd, which writes independent frames that also
+      decompress in parallel; level from AFNI_ZSTD_LEVEL      [zstd] */
+   { int zlev = (int)AFNI_numenv_def("AFNI_ZSTD_LEVEL", 1.0) ;
+     int zthr = (int)AFNI_numenv_def("AFNI_ZSTD_THREADS", 0.0) ;
+     int is_pzstd = 0 ;
+     char thrstr[32] = "" ;
 
+     if( zlev < 1 || zlev > 19 ) zlev = 1 ;
+     if( zthr < 0 ) zthr = 0 ;
+
+     if( !AFNI_yesenv("AFNI_DONT_USE_PZSTD") )
+        pgname = THD_find_executable("pzstd") ;
+     else
+        pgname = NULL ;
+     if( pgname != NULL ) is_pzstd = 1 ;
+     else                 pgname = THD_find_executable("zstd") ;
+
+     if( pgname == NULL ){
+       COMPRESS_program_ok[4] = 0 ;
+     } else {
+       if( zthr > 0 ) sprintf(thrstr, is_pzstd ? " -p %d" : " -T%d", zthr) ;
+       else if( !is_pzstd ) strcpy(thrstr, " -T0") ;  /* pzstd: all CPUs */
        cprog_zstd = (char *)malloc(sizeof(char)*(strlen(pgname)+64)) ;
-       sprintf(cprog_zstd,"%s -1q -T%d -c > '%%s'",pgname,zstd_threads) ;
+       sprintf(cprog_zstd,"%s -%d -q%s -c > '%%s'",pgname,zlev,thrstr) ;
        COMPRESS_program[4] = cprog_zstd ;
-       uprog_zstd = (char *)malloc(sizeof(char)*(strlen(pgname)+32)) ;
-       sprintf(uprog_zstd,"%s -dq -c '%%s'",pgname) ;
+       uprog_zstd = (char *)malloc(sizeof(char)*(strlen(pgname)+64)) ;
+       sprintf(uprog_zstd,"%s -dq%s -c '%%s'",pgname,is_pzstd ? thrstr : "") ;
        COMPRESS_unprogram[4] = uprog_zstd ;
-    }
+     }
+   }
 
    return ;
 }
