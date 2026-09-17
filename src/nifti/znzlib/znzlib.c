@@ -40,7 +40,7 @@ NB: seeks for writable files with compression are quite restricted
   a single stream.
 
   Environment controls:
-     AFNI_ZSTD_LEVEL     compression level          (default 1)
+     AFNI_ZSTD_LEVEL     compression level          (default 3)
      AFNI_ZSTD_THREADS   worker threads             (default #CPUs, max 16)
      AFNI_ZSTD_FRAME_MB  uncompressed MB per frame  (default 8)
   ----------------------------------------------------------------------*/
@@ -53,7 +53,9 @@ NB: seeks for writable files with compression are quite restricted
 #error "znzlib zstd support requires libzstd >= 1.4.0"
 #endif
 
-#if !defined(_WIN32) && !defined(_WIN64)
+/* threads are used for parallel (un)compression of frames; define
+   ZNZ_ZSTD_NO_THREADS to build the single-threaded version */
+#if !defined(_WIN32) && !defined(_WIN64) && !defined(ZNZ_ZSTD_NO_THREADS)
 #include <pthread.h>
 #include <unistd.h>
 #define ZNZ_ZSTD_PTHREADS
@@ -168,7 +170,7 @@ static struct znz_zstd * znz_zstd_new(const char *path, int writing)
   if( ncpu > ZNZ_MAX_THREADS ) ncpu = ZNZ_MAX_THREADS;
 #endif
   z->nthreads   = znz_env_int("AFNI_ZSTD_THREADS", ncpu, 1, ZNZ_MAX_THREADS);
-  z->level      = znz_env_int("AFNI_ZSTD_LEVEL", 1, -7, 22);
+  z->level      = znz_env_int("AFNI_ZSTD_LEVEL", 3, -7, 22);
   z->frame_size = (size_t)znz_env_int("AFNI_ZSTD_FRAME_MB", 8, 1, 1024) << 20;
 
   z->cctx = (ZSTD_CCtx **)calloc(z->nthreads, sizeof(ZSTD_CCtx *));
@@ -508,15 +510,17 @@ static int znz_zstd_locate(struct znz_zstd *z, FILE *fp, znz_off_t pos)
     ii = z->hint;
 
   for( ; ; ii++ ) {
-    znz_zframe *fr;
     if( ii == z->nframes ) {
       int ev = znz_zstd_extend_index(z, fp);
       if( ev < 0 ) return -1;
       if( ev > 0 ) return z->nframes;
     }
-    fr = z->frames + ii;
-    if( !fr->uknown && znz_zstd_decode_batch(z, fp, ii) ) return -1;
-    if( pos < fr->uoff + (znz_off_t)fr->usize ) { z->hint = ii; return ii; }
+    /* note: extend_index and decode_batch may realloc z->frames, so the
+       frame is always addressed through z->frames, never a saved pointer */
+    if( !z->frames[ii].uknown && znz_zstd_decode_batch(z, fp, ii) ) return -1;
+    if( pos < z->frames[ii].uoff + (znz_off_t)z->frames[ii].usize ) {
+      z->hint = ii; return ii;
+    }
   }
 }
 
@@ -527,17 +531,15 @@ static size_t znz_zstd_read_indexed(struct znz_zstd *z, FILE *fp,
 
   while( done < nbytes ) {
     int         ii = znz_zstd_locate(z, fp, z->pos);
-    znz_zframe *fr;
     size_t      off, ncopy;
 
     if( ii < 0 || ii >= z->nframes ) break;
-    fr = z->frames + ii;
-    if( fr->data == NULL && znz_zstd_decode_batch(z, fp, ii) ) break;
+    if( z->frames[ii].data == NULL && znz_zstd_decode_batch(z, fp, ii) ) break;
 
-    off   = (size_t)(z->pos - fr->uoff);
-    ncopy = fr->usize - off;
+    off   = (size_t)(z->pos - z->frames[ii].uoff);
+    ncopy = z->frames[ii].usize - off;
     if( ncopy > nbytes - done ) ncopy = nbytes - done;
-    memcpy(buf + done, fr->data + off, ncopy);
+    memcpy(buf + done, z->frames[ii].data + off, ncopy);
     done   += ncopy;
     z->pos += (znz_off_t)ncopy;
   }
